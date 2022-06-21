@@ -27,44 +27,41 @@
 </style>
 
 <body style="margin : 0px; overflow: hidden;">
-  <!-- minimal loader shown until image descriptors are loaded -->
-  <div class="arjs-loader">
-    <div>Loading, please wait...</div>
-  </div>
-  <a-scene
-    vr-mode-ui="enabled: false;"
-    renderer="logarithmicDepthBuffer: true; precision: medium;"
-    embedded
-    arjs="trackingMethod: best; sourceType: webcam;debugUIEnabled: true;"
-  >
-    <!-- we use cors proxy to avoid cross-origin problems ATTENTION! you need to set up your server -->
-    <!-- url="https://miketheanomaly.github.io/webARCon/MelButterfly"-->
-    <!-- https://raw.githack.com/AR-js-org/AR.js/master/aframe/examples/image-tracking/nft/trex/trex-image/trex -->
-    
-    
-    <a-nft
-      type="nft"
-      smooth="true"
-      url="./track"
-      smoothCount="10"
-      smoothTolerance=".01"
-      smoothThreshold="5"
+    <!-- minimal loader shown until image descriptors are loaded -->
+    <div class="arjs-loader">
+      <div>Loading, please wait...</div>
+    </div>
+    <a-scene
+      vr-mode-ui="enabled: false;"
+      renderer="logarithmicDepthBuffer: true; precision: medium;"
+      embedded
+      arjs="trackingMethod: best; sourceType: webcam;debugUIEnabled: false;"
     >
-      <a-entity
-        gltf-model="./moth3.gltf"
-        animation-mixer="loop: pingpong;"
-        scale="1000 1000 1000"
-        position="0 0 0"
-        emiteevents="true"
+      <!-- we use cors proxy to avoid cross-origin problems ATTENTION! you need to set up your server -->
+      <!-- url="https://miketheanomaly.github.io/webARCon/MelButterfly"-->
+      <!-- https://raw.githack.com/AR-js-org/AR.js/master/aframe/examples/image-tracking/nft/trex/trex-image/trex -->
+      <a-nft
+        type="nft"
+        smooth="true"
+        url="./moth"
+        smoothCount="10"
+        smoothTolerance=".01"
+        smoothThreshold="5"
       >
-      </a-entity>
-    
+        <a-entity
+          gltf-model="./moth3.gltf"
+          animation-mixer="loop: pingpong;"
+          scale="1000 1000 1000"
+          position="0 0 0"
+          emiteevents="true"
+        >
+        </a-entity>
+       
+      </a-nft>
       
-    </a-nft>
-    
-    <a-entity camera> </a-entity>
-  </a-scene>
+      <a-entity camera> </a-entity>
+    </a-scene>
 
-
+    <a href=""></a>
   </body>
 </html>
