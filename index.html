@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Data Graph</title>
+    <title>Files Graph</title>
+    <div>for the Marathon erg</div>
+    <div>https://uesc.io/api/folders</div>
     <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <style type="text/css">
         #myNetwork {
@@ -37,7 +39,7 @@
 </head>
 <body>
 
-<h1>Data Graph Visualization</h1>
+<h1> Visualization</h1>
 <p>This graph visualizes the provided JSON data in a hierarchical layout.</p>
 
 <div id="myNetwork"></div>
@@ -9363,17 +9365,21 @@
     // Create vis.js data
     var nodes = [];
     var edges = [];
+    var network;
+    var allNodes;
+    var matchedNodes = []; // Array to store matched node IDs
+    var currentMatchIndex = -1; // Index to track current match position
 
     jsObject.forEach(function(item) {
-        let nodeLabel =  item.name;
-        let nodeColor = '#97c2fc'; // Default node color
+        let nodeLabel = item.name;
+        let nodeColor = '#97c2fc';
 
         let fileInfoHTML = '';
         if (item.files && item.files.length > 0) {
             item.files.forEach(file => {
                 if (file.fileType === 'executable') {
-                    fileInfoHTML +=  file.fileName;
-                    nodeColor = '#FFA07A'; // Different color for nodes with executables
+                    fileInfoHTML += file.fileName;
+                    nodeColor = '#FFA07A';
                 } else if (file.fileType === 'readable') {
                     fileInfoHTML += 'File: ' + file.fileName;
                     if (file.data) {
@@ -9389,9 +9395,9 @@
             shape: 'box',
             color: nodeColor,
             labelHighlightBold: true,
-            widthConstraint: { maximum: 400 }, // Constrain node width
-            heightConstraint: { minimum: 50 }, // Minimum node height
-            margin: 10, // Margin inside the node box
+            widthConstraint: { maximum: 400 },
+            heightConstraint: { minimum: 50 },
+            margin: 10,
             font: {
                 multi: 'html',
                 face: 'verdana'
@@ -9405,6 +9411,43 @@
         }
     });
 
+    // Create search container
+    var searchContainer = document.createElement('div');
+    searchContainer.style.display = 'flex';
+    searchContainer.style.alignItems = 'center';
+    searchContainer.style.margin = '10px';
+    document.body.insertBefore(searchContainer, document.getElementById('myNetwork'));
+
+    // Create search input
+    var searchBox = document.createElement('input');
+    searchBox.type = 'text';
+    searchBox.placeholder = 'Search nodes...';
+    searchBox.style.padding = '5px';
+    searchBox.style.width = '200px';
+    searchBox.style.marginRight = '5px';
+    searchContainer.appendChild(searchBox);
+
+    // Create previous button
+    var prevButton = document.createElement('button');
+    prevButton.innerHTML = '&larr; Prev';
+    prevButton.style.padding = '5px 10px';
+    prevButton.style.marginRight = '5px';
+    prevButton.disabled = true;
+    searchContainer.appendChild(prevButton);
+
+    // Create next button
+    var nextButton = document.createElement('button');
+    nextButton.innerHTML = 'Next &rarr;';
+    nextButton.style.padding = '5px 10px';
+    nextButton.style.marginRight = '5px';
+    nextButton.disabled = true;
+    searchContainer.appendChild(nextButton);
+
+    // Create results counter
+    var resultsCounter = document.createElement('span');
+    resultsCounter.style.marginLeft = '5px';
+    searchContainer.appendChild(resultsCounter);
+
     // Create a network
     var container = document.getElementById('myNetwork');
     var data = {
@@ -9414,8 +9457,8 @@
     var options = {
         layout: {
             hierarchical: {
-                direction: 'UD',        // Direction of the graph: Up-Down
-                sortMethod: 'directed',  // Sort method.
+                direction: 'UD',
+                sortMethod: 'directed',
                 levelSeparation: 150,
                 nodeSpacing: 500,
                 treeSpacing: 500,
@@ -9425,7 +9468,7 @@
                 directionConstraint: 'UD',
                 shakeTowards: 'leaves',
                 traverseConditional: function(node, edge, path) {
-                  return true;
+                    return true;
                 },
                 nodeSort: function (a, b) {
                     return b.id - a.id;
@@ -9459,10 +9502,118 @@
                 roundness: 0.4
             }
         },
-        physics: false // Disable physics for a static graph
+        physics: false
     };
 
-    var network = new vis.Network(container, data, options);
+    network = new vis.Network(container, data, options);
+    allNodes = data.nodes.get({returnType: "Object"});
+
+    // Function to update search results and navigation
+    function updateSearch() {
+        var searchValue = searchBox.value.toLowerCase();
+        if(searchValue.length === 0) {
+            // Reset all nodes to original color
+            for (var nodeId in allNodes) {
+                var node = allNodes[nodeId];
+                node.color = node.originalColor;
+            }
+            data.nodes.update(allNodes);
+            network.fit(); // Adjust the view to fit all nodes when search is cleared
+            return;
+        }
+        var updateArray = [];
+        matchedNodes = [];
+        currentMatchIndex = -1;
+        
+        for (var nodeId in allNodes) {
+            var node = allNodes[nodeId];
+            var matchFound = node.label.toLowerCase().indexOf(searchValue) !== -1;
+            
+            // Store original color if not already stored
+            if (!node.originalColor) {
+                node.originalColor = node.color;
+            }
+            
+            // Update node appearance
+            updateArray.push({
+                id: node.id,
+                color: matchFound ? '#00ff00' : node.originalColor,
+                font: {
+                    color: '#000000'
+                }
+            });
+            
+            // Store matched nodes for navigation
+            if (matchFound && searchValue.length > 0) {
+                matchedNodes.push(node.id);
+            }
+        }
+        
+        data.nodes.update(updateArray);
+        
+        // Update navigation controls
+        if (matchedNodes.length > 0) {
+            prevButton.disabled = false;
+            nextButton.disabled = false;
+            resultsCounter.textContent = "0 of " + matchedNodes.length + " matches";
+            // Move to first match
+            navigateToMatch(0);
+        } else {
+            prevButton.disabled = true;
+            nextButton.disabled = true;
+            resultsCounter.textContent = "No matches";
+            if (searchValue.length === 0) {
+                network.fit(); // Adjust the view to fit all nodes when search is cleared
+            }
+        }
+    }
+
+    // Function to navigate to a specific match
+    function navigateToMatch(index) {
+        if (matchedNodes.length === 0) return;
+        
+        // Wrap around if index is out of bounds
+        if (index < 0) index = matchedNodes.length - 1;
+        if (index >= matchedNodes.length) index = 0;
+        
+        currentMatchIndex = index;
+        
+        // Update counter display
+        resultsCounter.textContent = (currentMatchIndex + 1) + " of " + matchedNodes.length + " matches";
+        
+        // Highlight current match
+        var updateArray = [];
+        for (let i = 0; i < matchedNodes.length; i++) {
+            updateArray.push({
+                id: matchedNodes[i],
+                color: i === currentMatchIndex ? '#FF4500' : '#ffff00'
+            });
+        }
+        data.nodes.update(updateArray);
+        
+        // Focus on the current match
+        network.focus(matchedNodes[currentMatchIndex], {
+            scale: 1,
+            animation: false
+        });
+    }
+
+    // Add search event listener
+    searchBox.addEventListener('input', updateSearch);
+
+    // Add navigation event listeners
+    prevButton.addEventListener('click', function() {
+        navigateToMatch(currentMatchIndex - 1);
+    });
+
+    nextButton.addEventListener('click', function() {
+        navigateToMatch(currentMatchIndex + 1);
+    });
+
+    // Store original colors
+    nodes.forEach(function(node) {
+        allNodes[node.id].originalColor = node.color;
+    });
 </script>
 
 </body>
